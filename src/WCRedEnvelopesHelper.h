@@ -58,3 +58,49 @@
 - (void)OnOpenRedEnvelopes;
 
 @end
+
+@interface MMUIViewController : UIViewController
+
+@end
+
+@interface MMTableViewInfo : NSObject
+
+- (void)setDelegate:(id)delegate;
+- (id)initWithFrame:(CGRect)frame style:(UITableViewStyle)style;
+- (id)getTableView;
+- (void)clearAllSection;
+- (void)addSection:(id)arg1;
+- (void)insertSection:(id)arg1 At:(unsigned int)arg2;
+
+@end
+
+@interface MMTableViewSectionInfo : NSObject
+
++ (id)sectionInfoDefaut;
+- (void)addCell:(id)arg1;
+- (void)setHeaderView:(UIView *)headerView;
+- (void)setFHeaderHeight:(CGFloat)height;
+
+@end
+
+@interface MMTableViewUserInfo : NSObject
+
+- (id)getUserInfoValueForKey:(id)arg1;
+- (void)addUserInfoValue:(id)arg1 forKey:(id)arg2;
+
+@end
+
+@interface MMTableViewCellInfo : MMTableViewUserInfo
+
++ (id)editorCellForSel:(SEL)arg1 target:(id)arg2 title:(id)arg3 margin:(double)arg4 tip:(id)arg5 focus:(_Bool)arg6 autoCorrect:(_Bool)arg7 text:(id)arg8 isFitIpadClassic:(_Bool)arg9;
++ (id)normalCellForSel:(SEL)arg1 target:(id)arg2 title:(id)arg3 accessoryType:(long long)arg4;
++ (id)switchCellForSel:(SEL)arg1 target:(id)arg2 title:(id)arg3 on:(_Bool)arg4;
++ (id)normalCellForSel:(SEL)arg1 target:(id)arg2 title:(id)arg3 rightValue:(id)arg4 accessoryType:(long long)arg5;
++ (id)normalCellForTitle:(id)arg1 rightValue:(id)arg2;
++ (id)urlCellForTitle:(id)arg1 url:(id)arg2;
+
+@end
+
+@interface MMTableView: UITableView
+
+@end

@@ -1,5 +1,6 @@
 #import "WCRedEnvelopesHelper.h"
 #import "LLRedEnvelopesMgr.h"
+#import "LLSettingController.h"
 #import <AVFoundation/AVFoundation.h>
 %hook WCDeviceStepObject
 
@@ -12,10 +13,10 @@
 %hook UINavigationController
 
 - (void)PushViewController:(UIViewController *)controller animated:(BOOL)animated{
-	if ([LLRedEnvelopesMgr shared].isHongBaoPush && [controller isKindOfClass:NSClassFromString(@"BaseMsgContentViewController")]) {
+	if ([LLRedEnvelopesMgr shared].isHongBaoPush && [controller isMemberOfClass:NSClassFromString(@"BaseMsgContentViewController")]) {
 		[LLRedEnvelopesMgr shared].isHongBaoPush = NO;
 		[LLRedEnvelopesMgr shared].isHiddenRedEnvelopesReceiveView = YES;
-        [[LLRedEnvelopesMgr shared] handleRedEnvelopesPushVC:controller]; 
+        [[LLRedEnvelopesMgr shared] handleRedEnvelopesPushVC:(BaseMsgContentViewController *)controller]; 
     } else {
     	%orig;
     }
@@ -76,9 +77,11 @@
 
 - (id)initWithFrame:(CGRect)frame andData:(id)data delegate:(id)delegate{
 	WCRedEnvelopesReceiveHomeView *view = %orig;
-    //打开红包
-    [view OnOpenRedEnvelopes]; 
-    view.hidden = YES;
+	if([LLRedEnvelopesMgr shared].isHiddenRedEnvelopesReceiveView){
+		//打开红包
+	    [view OnOpenRedEnvelopes]; 
+	    view.hidden = YES;
+	}
     return view;
 }
 
@@ -144,6 +147,26 @@
 	} else {
 		%orig;
 	}
+}
+
+%end
+
+%hook NewSettingViewController
+
+- (void)reloadTableData{
+	%orig;
+    MMTableViewCellInfo *configCell = [%c(MMTableViewCellInfo) normalCellForSel:@selector(configHandler) target:self title:@"微信助手设置" accessoryType:1];
+    MMTableViewSectionInfo *sectionInfo = [%c(MMTableViewSectionInfo) sectionInfoDefaut];
+    [sectionInfo addCell:configCell];
+    MMTableViewInfo *tableViewInfo = [self valueForKey:@"m_tableViewInfo"];
+    [tableViewInfo insertSection:sectionInfo At:0];
+    [[tableViewInfo getTableView] reloadData];
+}
+
+%new
+- (void)configHandler{
+    LLSettingController *settingVC = [[LLSettingController alloc] init];
+    [((UIViewController *)self).navigationController PushViewController:settingVC animated:YES];
 }
 
 %end
