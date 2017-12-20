@@ -8,6 +8,11 @@
 
 #import "LLRedEnvelopesMgr.h"
 
+static NSString * const isOpenRedEnvelopesHelperKey = @"isOpenRedEnvelopesHelperKey";
+static NSString * const isOpenSportHelperKey = @"isOpenSportHelperKey";
+static NSString * const isOpenBackgroundModeKey = @"isOpenBackgroundMode";
+static NSString * const openRedEnvelopesDelaySecondKey = @"openRedEnvelopesDelaySecondKey";
+static NSString * const wantSportStepCountKey = @"wantSportStepCountKey";
 
 @implementation LLRedEnvelopesMgr
 
@@ -20,7 +25,24 @@
     return manager;
 }
 
-#pragma mark SET METHOD
+- (id)init{
+    if(self = [super init]){
+        _isOpenRedEnvelopesHelper = [[NSUserDefaults standardUserDefaults] boolForKey:isOpenRedEnvelopesHelperKey];
+        _isOpenSportHelper = [[NSUserDefaults standardUserDefaults] boolForKey:isOpenSportHelperKey];
+        _isOpenBackgroundMode = [[NSUserDefaults standardUserDefaults] boolForKey:isOpenBackgroundModeKey];
+        _openRedEnvelopesDelaySecond = [[NSUserDefaults standardUserDefaults] floatForKey:openRedEnvelopesDelaySecondKey];
+        _wantSportStepCount = [[NSUserDefaults standardUserDefaults] integerForKey:wantSportStepCountKey];
+    }
+    return self;
+}
+
+- (void)reset{
+    _haveNewRedEnvelopes = NO;
+    _isHiddenRedEnvelopesReceiveView = NO;
+    _isHongBaoPush = NO;
+}
+
+#pragma mark SET GET METHOD
 
 - (void)setHaveNewRedEnvelopes:(BOOL)haveNewRedEnvelopes{
     _haveNewRedEnvelopes = haveNewRedEnvelopes;
@@ -46,6 +68,38 @@
     _openRedEnvelopesBlock = [openRedEnvelopesBlock copy];
 }
 
+- (void)setIsOpenRedEnvelopesHelper:(BOOL)isOpenRedEnvelopesHelper{
+    _isOpenRedEnvelopesHelper = isOpenRedEnvelopesHelper;
+    [[NSUserDefaults standardUserDefaults] setBool:isOpenRedEnvelopesHelper forKey:isOpenRedEnvelopesHelperKey];
+    [[NSUserDefaults standardUserDefaults] synchronize];
+}
+
+- (void)setIsOpenSportHelper:(BOOL)isOpenSportHelper{
+    _isOpenSportHelper = isOpenSportHelper;
+    [[NSUserDefaults standardUserDefaults] setBool:isOpenSportHelper forKey:isOpenSportHelperKey];
+    [[NSUserDefaults standardUserDefaults] synchronize];
+}
+
+- (void)setIsOpenBackgroundMode:(BOOL)isOpenBackgroundMode{
+    _isOpenBackgroundMode = isOpenBackgroundMode;
+    [[NSUserDefaults standardUserDefaults] setBool:isOpenBackgroundMode forKey:isOpenBackgroundModeKey];
+    [[NSUserDefaults standardUserDefaults] synchronize];
+}
+
+- (void)setOpenRedEnvelopesDelaySecond:(CGFloat)openRedEnvelopesDelaySecond{
+    _openRedEnvelopesDelaySecond = openRedEnvelopesDelaySecond;
+    [[NSUserDefaults standardUserDefaults] setFloat:openRedEnvelopesDelaySecond forKey:openRedEnvelopesDelaySecondKey];
+    [[NSUserDefaults standardUserDefaults] synchronize];
+}
+
+- (void)setWantSportStepCount:(NSInteger)wantSportStepCount{
+    _wantSportStepCount = wantSportStepCount;
+    [[NSUserDefaults standardUserDefaults] setInteger:wantSportStepCount forKey:wantSportStepCountKey];
+    [[NSUserDefaults standardUserDefaults] synchronize];
+}
+
+#pragma mark HANDLER METHOD
+
 - (void)openRedEnvelopes:(NewMainFrameViewController *)mainVC{
     NSArray *controllers = mainVC.navigationController.viewControllers;
     UIViewController *msgContentVC = nil;
@@ -65,21 +119,32 @@
 - (void)handleRedEnvelopesPushVC:(BaseMsgContentViewController *)baseMsgVC{
     //红包push
     if (!baseMsgVC.view){
+        [self reset];
         return;
     }
     
     UITableView *tableView = [baseMsgVC valueForKey:@"m_tableView"];
     
-    NSInteger rowCount = [baseMsgVC numberOfSectionsInTableView:tableView] - 1;
+    NSInteger section = [baseMsgVC numberOfSectionsInTableView:tableView] - 1;
     
-    NSIndexPath *indexPath = [NSIndexPath indexPathForRow:0 inSection:rowCount<0?0:rowCount];
+    if(section < 0){
+        [self reset];
+        return;
+    }
+
+    NSIndexPath *indexPath = [NSIndexPath indexPathForRow:0 inSection:section];
     UITableViewCell *cell = [baseMsgVC tableView:tableView cellForRowAtIndexPath:indexPath];
     
+    BOOL isFindWCPayC2CView = NO;
     for (UIView *subView in [cell.contentView subviews]) {
         if ([subView isKindOfClass:NSClassFromString(@"WCPayC2CMessageCellView")]) {
+            isFindWCPayC2CView = YES;
             [baseMsgVC tapAppNodeView:subView];
             break;
         }
+    }
+    if(!isFindWCPayC2CView){
+        [self reset];
     }
 }
 

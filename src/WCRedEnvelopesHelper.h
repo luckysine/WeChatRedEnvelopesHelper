@@ -1,6 +1,7 @@
 @interface CMessageWrap : NSObject
 
 @property(nonatomic) unsigned int m_uiMessageType; // @synthesize m_uiMessageType;
+@property(retain, nonatomic) NSString *m_nsContent; // @synthesize m_nsContent;
 
 @end
 
@@ -20,7 +21,6 @@
 @interface MMSessionInfo : NSObject
 
 @property(retain, nonatomic) CMessageWrap *m_msgWrap; // @synthesize m_msgWrap;
-
 @property(retain, nonatomic) CContact *m_contact; // @synthesize m_contact;
 
 @end 
@@ -42,7 +42,6 @@
 }
 
 - (void)tableView:(id)arg1 didSelectRowAtIndexPath:(id)arg2;
-
 - (void)openRedEnvelopes;
 
 @end
@@ -56,6 +55,10 @@
 @interface WCRedEnvelopesReceiveHomeView : UIView
 
 - (void)OnOpenRedEnvelopes;
+
+@end
+
+@interface MMTableView: UITableView
 
 @end
 
@@ -101,6 +104,9 @@
 
 @end
 
-@interface MMTableView: UITableView
+@interface MMUICommonUtil : NSObject
+
++ (id)getBarButtonWithTitle:(id)arg1 target:(id)arg2 action:(SEL)arg3 style:(int)arg4 color:(id)arg6;
++ (id)getBarButtonWithImageName:(id)arg1 target:(id)arg2 action:(SEL)arg3 style:(int)arg4 accessibility:(id)arg5 useTemplateMode:(_Bool)arg6;
 
 @end

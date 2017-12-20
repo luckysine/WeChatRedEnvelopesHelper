@@ -8,8 +8,18 @@
 
 #import "LLSettingController.h"
 #import "WCRedEnvelopesHelper.h"
+#import "LLRedEnvelopesMgr.h"
+#import <objc/runtime.h>
+
+static NSString * const kSettingControllerKey = @"SettingControllerKey";
 
 @interface LLSettingController ()
+
+@property (nonatomic, strong) LLSettingParam *settingParam; //设置参数
+
+@end
+
+@implementation LLSettingParam
 
 @end
 
@@ -17,16 +27,30 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
+    [self commonInit];
     [self setNavigationBar];
+    [self exchangeMethod];
     [self reloadTableData];
+}
+
+- (void)commonInit{
+    _settingParam = [[LLSettingParam alloc] init];
+    _settingParam.isOpenRedEnvelopesHelper = [LLRedEnvelopesMgr shared].isOpenRedEnvelopesHelper;
+    _settingParam.isOpenSportHelper = [LLRedEnvelopesMgr shared].isOpenSportHelper;
+    _settingParam.isOpenBackgroundMode = [LLRedEnvelopesMgr shared].isOpenBackgroundMode;
+    _settingParam.openRedEnvelopesDelaySecond = [LLRedEnvelopesMgr shared].openRedEnvelopesDelaySecond;
+    _settingParam.wantSportStepCount = [LLRedEnvelopesMgr shared].wantSportStepCount;
 }
 
 - (void)setNavigationBar{
     self.title = @"微信助手设置";
     
-    UIBarButtonItem *saveItem = [[UIBarButtonItem alloc] initWithTitle:@"保存" style:UIBarButtonItemStylePlain target:self action:@selector(clickSaveItem)];
-    saveItem.tintColor = [UIColor whiteColor];
+    UIBarButtonItem *saveItem = [NSClassFromString(@"MMUICommonUtil") getBarButtonWithTitle:@"保存" target:self action:@selector(clickSaveItem) style:0 color:[UIColor whiteColor]];
     self.navigationItem.rightBarButtonItem = saveItem;
+}
+
+- (void)exchangeMethod{
+    method_exchangeImplementations(class_getInstanceMethod(NSClassFromString(@"MMTableViewCellInfo"), @selector(actionEditorCell:)), class_getInstanceMethod([LLSettingController class], @selector(onTextFieldEditChanged:)));
 }
 
 - (void)reloadTableData{
@@ -34,19 +58,25 @@
     [self.view addSubview:[tableInfo getTableView]];
     [tableInfo setDelegate:self];
     
-    MMTableViewCellInfo *openRedEnvelopesCell = [NSClassFromString(@"MMTableViewCellInfo") switchCellForSel:@selector(openRedEnvelopesSwitchHandler:) target:self title:@"是否开启红包助手" on:YES];
-    MMTableViewCellInfo *backgroundModeCell = [NSClassFromString(@"MMTableViewCellInfo") switchCellForSel:@selector(openBackgroundMode:) target:self title:@"是否开启后台模式" on:YES];
-    MMTableViewCellInfo *delayTimeCell = [NSClassFromString(@"MMTableViewCellInfo") editorCellForSel:@selector(delayTimeHandler:) target:self title:@"延迟秒数" margin:120 tip:@"请输入延迟抢红包秒数" focus:NO autoCorrect:NO text:@"0" isFitIpadClassic:YES];
+    MMTableViewCellInfo *openRedEnvelopesCell = [NSClassFromString(@"MMTableViewCellInfo") switchCellForSel:@selector(openRedEnvelopesSwitchHandler:) target:self title:@"是否开启红包助手" on:_settingParam.isOpenRedEnvelopesHelper];
+    MMTableViewCellInfo *backgroundModeCell = [NSClassFromString(@"MMTableViewCellInfo") switchCellForSel:@selector(openBackgroundMode:) target:self title:@"是否开启后台模式" on:_settingParam.isOpenBackgroundMode];
+    MMTableViewCellInfo *delayTimeCell = [NSClassFromString(@"MMTableViewCellInfo") editorCellForSel:nil target:nil title:@"延迟秒数" margin:120 tip:@"请输入延迟抢红包秒数" focus:NO autoCorrect:NO text:[NSString stringWithFormat:@"%.2f",_settingParam.openRedEnvelopesDelaySecond] isFitIpadClassic:YES];
     [delayTimeCell addUserInfoValue:@(UIKeyboardTypeDecimalPad) forKey:@"keyboardType"];
+    [delayTimeCell addUserInfoValue:@"delayTimeCell" forKey:@"cellType"];
+    objc_setAssociatedObject(delayTimeCell, &kSettingControllerKey, self, OBJC_ASSOCIATION_ASSIGN);
+
     MMTableViewSectionInfo *redEnvelopesSection = [NSClassFromString(@"MMTableViewSectionInfo") sectionInfoDefaut];
     [redEnvelopesSection setHeaderView:[[UIView alloc] initWithFrame:CGRectMake(0,0,0,20)]];
     [redEnvelopesSection addCell:openRedEnvelopesCell];
     [redEnvelopesSection addCell:backgroundModeCell];
     [redEnvelopesSection addCell:delayTimeCell];
     
-    MMTableViewCellInfo *openStepCountCell = [NSClassFromString(@"MMTableViewCellInfo") switchCellForSel:@selector(openStepCountSwitchHandler:) target:self title:@"是否开启运动助手" on:YES];
-    MMTableViewCellInfo *stepCell = [NSClassFromString(@"MMTableViewCellInfo") editorCellForSel:@selector(stepCountHandler:) target:self title:@"延迟秒数" margin:120 tip:@"请输入想要的运动步数" focus:NO autoCorrect:NO text:@"0" isFitIpadClassic:YES];
+    MMTableViewCellInfo *openStepCountCell = [NSClassFromString(@"MMTableViewCellInfo") switchCellForSel:@selector(openStepCountSwitchHandler:) target:self title:@"是否开启运动助手" on:_settingParam.isOpenSportHelper];
+    MMTableViewCellInfo *stepCell = [NSClassFromString(@"MMTableViewCellInfo") editorCellForSel:@selector(stepCountHandler:) target:self title:@"运动步数" margin:120 tip:@"请输入想要的运动步数" focus:NO autoCorrect:NO text:[NSString stringWithFormat:@"%ld",(long)_settingParam.wantSportStepCount] isFitIpadClassic:YES];
     [stepCell addUserInfoValue:@(UIKeyboardTypeNumberPad) forKey:@"keyboardType"];
+    [stepCell addUserInfoValue:@"stepCell" forKey:@"cellType"];
+    objc_setAssociatedObject(stepCell, &kSettingControllerKey, self, OBJC_ASSOCIATION_ASSIGN);
+
     MMTableViewSectionInfo *stepCountSection = [NSClassFromString(@"MMTableViewSectionInfo") sectionInfoDefaut];
     [stepCountSection setHeaderView:[[UIView alloc] initWithFrame:CGRectMake(0,0,0,20)]];
     [stepCountSection addCell:openStepCountCell];
@@ -58,38 +88,46 @@
     [[tableInfo getTableView] reloadData];
 }
 
-- (void)openRedEnvelopesSwitchHandler:(UISwitch *)openSwitch{
-    UILabel *lbl = [UILabel new];
-    lbl.text = [NSString stringWithFormat:@"%@",openSwitch.class];
-    lbl.frame = CGRectMake(10,300,300,200);
-    lbl.textColor = [UIColor blueColor];
-    lbl.numberOfLines = 0;
-    [[UIApplication sharedApplication].windows[0] addSubview:lbl];
-}
-
 //点击保存
 - (void)clickSaveItem{
+    [LLRedEnvelopesMgr shared].isOpenRedEnvelopesHelper = _settingParam.isOpenRedEnvelopesHelper;
+    [LLRedEnvelopesMgr shared].isOpenSportHelper = _settingParam.isOpenSportHelper;
+    [LLRedEnvelopesMgr shared].isOpenBackgroundMode = _settingParam.isOpenBackgroundMode;
+    [LLRedEnvelopesMgr shared].openRedEnvelopesDelaySecond = _settingParam.openRedEnvelopesDelaySecond;
+    [LLRedEnvelopesMgr shared].wantSportStepCount = _settingParam.wantSportStepCount;
     [self.navigationController popViewControllerAnimated:YES];
 }
 
-- (void)openBackgroundMode:(UISwitch *)backgroundMode{
-    
+- (void)openRedEnvelopesSwitchHandler:(UISwitch *)openSwitch{
+    _settingParam.isOpenRedEnvelopesHelper = openSwitch.on;
 }
 
-- (void)delayTimeHandler:(UITextField *)textField{
-    
+- (void)openBackgroundMode:(UISwitch *)backgroundMode{
+    _settingParam.isOpenBackgroundMode = backgroundMode.on;
+}
+
+- (void)onTextFieldEditChanged:(UITextField *)textField{
+    LLSettingController *settingController = objc_getAssociatedObject(self, &kSettingControllerKey);
+    MMTableViewCellInfo *cellInfo = (MMTableViewCellInfo *)self;
+    NSString *cellType = [cellInfo getUserInfoValueForKey:@"cellType"];
+    if([cellType isEqualToString:@"delayTimeCell"]){
+        settingController.settingParam.openRedEnvelopesDelaySecond = [textField.text floatValue];
+    } else if ([cellType isEqualToString:@"stepCell"]){
+        settingController.settingParam.wantSportStepCount = [textField.text integerValue];
+    }
 }
 
 - (void)openStepCountSwitchHandler:(UISwitch *)openSwitch{
-    
-}
-
-- (void)stepCountHandler:(UITextField *)textField{
-    
+    _settingParam.isOpenSportHelper = openSwitch.on;
 }
 
 - (void)scrollViewWillBeginDragging:(UIScrollView *)scrollView{
     [self.view endEditing:YES];
+}
+
+- (void)viewWillDisappear:(BOOL)animated{
+    [super viewWillDisappear:animated];
+    [self exchangeMethod]; //reset
 }
 
 @end
