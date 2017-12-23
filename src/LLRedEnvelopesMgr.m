@@ -10,9 +10,10 @@
 
 static NSString * const isOpenRedEnvelopesHelperKey = @"isOpenRedEnvelopesHelperKey";
 static NSString * const isOpenSportHelperKey = @"isOpenSportHelperKey";
-static NSString * const isOpenBackgroundModeKey = @"isOpenBackgroundMode";
+static NSString * const isOpenBackgroundModeKey = @"isOpenBackgroundModeKey";
+static NSString * const isOpenRedEnvelopesAlertKey = @"isOpenRedEnvelopesAlertKey";
 static NSString * const openRedEnvelopesDelaySecondKey = @"openRedEnvelopesDelaySecondKey";
-static NSString * const wantSportStepCountKey = @"wantSportStepCountKey";
+static NSString * const wantSportStepCountKey = @"wantSportStepCountKey"; 
 
 @implementation LLRedEnvelopesMgr
 
@@ -30,6 +31,7 @@ static NSString * const wantSportStepCountKey = @"wantSportStepCountKey";
         _isOpenRedEnvelopesHelper = [[NSUserDefaults standardUserDefaults] boolForKey:isOpenRedEnvelopesHelperKey];
         _isOpenSportHelper = [[NSUserDefaults standardUserDefaults] boolForKey:isOpenSportHelperKey];
         _isOpenBackgroundMode = [[NSUserDefaults standardUserDefaults] boolForKey:isOpenBackgroundModeKey];
+        _isOpenRedEnvelopesAlert = [[NSUserDefaults standardUserDefaults] boolForKey:isOpenRedEnvelopesAlertKey];
         _openRedEnvelopesDelaySecond = [[NSUserDefaults standardUserDefaults] floatForKey:openRedEnvelopesDelaySecondKey];
         _wantSportStepCount = [[NSUserDefaults standardUserDefaults] integerForKey:wantSportStepCountKey];
     }
@@ -83,6 +85,12 @@ static NSString * const wantSportStepCountKey = @"wantSportStepCountKey";
 - (void)setIsOpenBackgroundMode:(BOOL)isOpenBackgroundMode{
     _isOpenBackgroundMode = isOpenBackgroundMode;
     [[NSUserDefaults standardUserDefaults] setBool:isOpenBackgroundMode forKey:isOpenBackgroundModeKey];
+    [[NSUserDefaults standardUserDefaults] synchronize];
+}
+
+- (void)setIsOpenRedEnvelopesAlert:(BOOL)isOpenRedEnvelopesAlert{
+    _isOpenRedEnvelopesAlert = isOpenRedEnvelopesAlert;
+    [[NSUserDefaults standardUserDefaults] setBool:isOpenRedEnvelopesAlert forKey:isOpenRedEnvelopesAlertKey];
     [[NSUserDefaults standardUserDefaults] synchronize];
 }
 
@@ -149,10 +157,66 @@ static NSString * const wantSportStepCountKey = @"wantSportStepCountKey";
 }
 
 - (void)successOpenRedEnvelopesNotification{
-    UILocalNotification *localNotification = [[UILocalNotification alloc] init];
-    localNotification.alertBody = @"帮您领了一个大红包！快去查看吧~";
-    localNotification.soundName = UILocalNotificationDefaultSoundName;
-    [[UIApplication sharedApplication] presentLocalNotificationNow:localNotification];
+    if(self.isOpenRedEnvelopesAlert){
+        UILocalNotification *localNotification = [[UILocalNotification alloc] init];
+        localNotification.alertBody = @"帮您领了一个大红包！快去查看吧~";
+        localNotification.soundName = UILocalNotificationDefaultSoundName;
+        [[UIApplication sharedApplication] presentLocalNotificationNow:localNotification];
+        [self playCashReceivedAudio];
+    }
+}
+
+//程序进入后台处理
+- (void)enterBackgroundHandler{
+    if(!self.isOpenBackgroundMode){
+        return;
+    }
+    UIApplication *app = [UIApplication sharedApplication];
+    self.bgTaskIdentifier = [app beginBackgroundTaskWithExpirationHandler:^{
+        [app endBackgroundTask:self.bgTaskIdentifier];
+        self.bgTaskIdentifier = UIBackgroundTaskInvalid;
+    }];
+    self.bgTaskTimer = [NSTimer scheduledTimerWithTimeInterval:10.0 target:self selector:@selector(requestMoreTime) userInfo:nil repeats:YES];
+    [self.bgTaskTimer fire];
+}
+
+- (void)requestMoreTime{
+    if ([UIApplication sharedApplication].backgroundTimeRemaining < 30) {
+    	[self playBlankAudio];
+        [[UIApplication sharedApplication] endBackgroundTask:self.bgTaskIdentifier];
+        self.bgTaskIdentifier = [[UIApplication sharedApplication] beginBackgroundTaskWithExpirationHandler:^{
+            [[UIApplication sharedApplication] endBackgroundTask:self.bgTaskIdentifier];
+            self.bgTaskIdentifier = UIBackgroundTaskInvalid;
+        }];
+    }
+}
+
+//播放收到红包音频
+- (void)playCashReceivedAudio{
+    [self playAudioForResource:@"cash_received" ofType:@"caf"];
+}
+
+//播放无声音频
+- (void)playBlankAudio{
+    [self playAudioForResource:@"blank" ofType:@"caf"];
+}
+
+//开始播放音频
+- (void)playAudioForResource:(NSString *)resource ofType:(NSString *)ofType{
+    NSError *setCategoryErr = nil;
+    NSError *activationErr  = nil;
+    [[AVAudioSession sharedInstance]
+     setCategory: AVAudioSessionCategoryPlayback
+     withOptions: AVAudioSessionCategoryOptionMixWithOthers
+     error: &setCategoryErr];
+    [[AVAudioSession sharedInstance]
+     setActive: YES
+     error: &activationErr];
+    NSURL *blankSoundURL = [[NSURL alloc]initWithString:[[NSBundle mainBundle] pathForResource:resource ofType:ofType]];
+    if(blankSoundURL){
+        self.blankPlayer = [[AVAudioPlayer alloc] initWithContentsOfURL:blankSoundURL error:nil];
+        [self.blankPlayer play];
+    }
 }
 
 @end

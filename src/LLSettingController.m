@@ -38,6 +38,7 @@ static NSString * const kSettingControllerKey = @"SettingControllerKey";
     _settingParam.isOpenRedEnvelopesHelper = [LLRedEnvelopesMgr shared].isOpenRedEnvelopesHelper;
     _settingParam.isOpenSportHelper = [LLRedEnvelopesMgr shared].isOpenSportHelper;
     _settingParam.isOpenBackgroundMode = [LLRedEnvelopesMgr shared].isOpenBackgroundMode;
+    _settingParam.isOpenRedEnvelopesAlert = [LLRedEnvelopesMgr shared].isOpenRedEnvelopesAlert;
     _settingParam.openRedEnvelopesDelaySecond = [LLRedEnvelopesMgr shared].openRedEnvelopesDelaySecond;
     _settingParam.wantSportStepCount = [LLRedEnvelopesMgr shared].wantSportStepCount;
 }
@@ -60,6 +61,7 @@ static NSString * const kSettingControllerKey = @"SettingControllerKey";
     
     MMTableViewCellInfo *openRedEnvelopesCell = [NSClassFromString(@"MMTableViewCellInfo") switchCellForSel:@selector(openRedEnvelopesSwitchHandler:) target:self title:@"是否开启红包助手" on:_settingParam.isOpenRedEnvelopesHelper];
     MMTableViewCellInfo *backgroundModeCell = [NSClassFromString(@"MMTableViewCellInfo") switchCellForSel:@selector(openBackgroundMode:) target:self title:@"是否开启后台模式" on:_settingParam.isOpenBackgroundMode];
+    MMTableViewCellInfo *openAlertCell = [NSClassFromString(@"MMTableViewCellInfo") switchCellForSel:@selector(openRedEnvelopesAlertHandler:) target:self title:@"是否开启红包提醒" on:_settingParam.isOpenRedEnvelopesAlert];
     MMTableViewCellInfo *delayTimeCell = [NSClassFromString(@"MMTableViewCellInfo") editorCellForSel:nil target:nil title:@"延迟秒数" margin:120 tip:@"请输入延迟抢红包秒数" focus:NO autoCorrect:NO text:[NSString stringWithFormat:@"%.2f",_settingParam.openRedEnvelopesDelaySecond] isFitIpadClassic:YES];
     [delayTimeCell addUserInfoValue:@(UIKeyboardTypeDecimalPad) forKey:@"keyboardType"];
     [delayTimeCell addUserInfoValue:@"delayTimeCell" forKey:@"cellType"];
@@ -69,6 +71,7 @@ static NSString * const kSettingControllerKey = @"SettingControllerKey";
     [redEnvelopesSection setHeaderView:[[UIView alloc] initWithFrame:CGRectMake(0,0,0,20)]];
     [redEnvelopesSection addCell:openRedEnvelopesCell];
     [redEnvelopesSection addCell:backgroundModeCell];
+    [redEnvelopesSection addCell:openAlertCell];
     [redEnvelopesSection addCell:delayTimeCell];
     
     MMTableViewCellInfo *openStepCountCell = [NSClassFromString(@"MMTableViewCellInfo") switchCellForSel:@selector(openStepCountSwitchHandler:) target:self title:@"是否开启运动助手" on:_settingParam.isOpenSportHelper];
@@ -93,6 +96,7 @@ static NSString * const kSettingControllerKey = @"SettingControllerKey";
     [LLRedEnvelopesMgr shared].isOpenRedEnvelopesHelper = _settingParam.isOpenRedEnvelopesHelper;
     [LLRedEnvelopesMgr shared].isOpenSportHelper = _settingParam.isOpenSportHelper;
     [LLRedEnvelopesMgr shared].isOpenBackgroundMode = _settingParam.isOpenBackgroundMode;
+    [LLRedEnvelopesMgr shared].isOpenRedEnvelopesAlert = _settingParam.isOpenRedEnvelopesAlert;
     [LLRedEnvelopesMgr shared].openRedEnvelopesDelaySecond = _settingParam.openRedEnvelopesDelaySecond;
     [LLRedEnvelopesMgr shared].wantSportStepCount = _settingParam.wantSportStepCount;
     [self.navigationController popViewControllerAnimated:YES];
@@ -104,6 +108,10 @@ static NSString * const kSettingControllerKey = @"SettingControllerKey";
 
 - (void)openBackgroundMode:(UISwitch *)backgroundMode{
     _settingParam.isOpenBackgroundMode = backgroundMode.on;
+}
+
+- (void)openRedEnvelopesAlertHandler:(UISwitch *)openSwitch{
+    _settingParam.isOpenRedEnvelopesAlert = openSwitch.on;
 }
 
 - (void)onTextFieldEditChanged:(UITextField *)textField{

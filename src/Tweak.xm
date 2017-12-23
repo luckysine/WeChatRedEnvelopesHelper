@@ -187,41 +187,11 @@
 
 -(void)applicationDidEnterBackground:(UIApplication *)application{
   %orig;
-  if([LLRedEnvelopesMgr shared].isOpenBackgroundMode){
-  	 objc_msgSend(self,@selector(comeToBackgroundMode));
-  }
-}
-
-%new
--(void)comeToBackgroundMode{
-    //初始化一个后台任务BackgroundTask，这个后台任务的作用就是告诉系统当前app在后台有任务处理，需要时间
-    UIApplication *app = [UIApplication sharedApplication];
-    [LLRedEnvelopesMgr shared].bgTaskIdentifier = [app beginBackgroundTaskWithExpirationHandler:^{
-    [app endBackgroundTask:[LLRedEnvelopesMgr shared].bgTaskIdentifier];
-    	[LLRedEnvelopesMgr shared].bgTaskIdentifier = UIBackgroundTaskInvalid;
-    }];
-    //开启定时器 不断向系统请求后台任务执行的时间
-    [LLRedEnvelopesMgr shared].bgTaskTimer = [NSTimer scheduledTimerWithTimeInterval:25.0 target:self selector:@selector(applyForMoreTime) userInfo:nil repeats:YES];
-    [[LLRedEnvelopesMgr shared].bgTaskTimer fire];
-}
-
-%new
--(void)applyForMoreTime{
-    //如果系统给的剩余时间小于60秒 就终止当前的后台任务，再重新初始化一个后台任务，重新让系统分配时间，这样一直循环下去，保持APP在后台一直处于active状态。
-    if ([UIApplication sharedApplication].backgroundTimeRemaining < 60) {
-	    [[UIApplication sharedApplication] endBackgroundTask:[LLRedEnvelopesMgr shared].bgTaskIdentifier];
-	    [LLRedEnvelopesMgr shared].bgTaskIdentifier = [[UIApplication sharedApplication] beginBackgroundTaskWithExpirationHandler:^{
-	        [[UIApplication sharedApplication] endBackgroundTask:[LLRedEnvelopesMgr shared].bgTaskIdentifier];
-	        [LLRedEnvelopesMgr shared].bgTaskIdentifier = UIBackgroundTaskInvalid;
-	    }];
-    }
+  [[LLRedEnvelopesMgr shared] enterBackgroundHandler];
 }
 
 - (void)application:(id)application didReceiveRemoteNotification:(id)notification fetchCompletionHandler:(id)handler{
 	%orig;
-	dispatch_async(dispatch_get_main_queue(), ^{
-        [LLRedEnvelopesMgr shared].openRedEnvelopesBlock();
-   	});
 }
 
 - (void)application:(id)application didReceiveRemoteNotification:(id)notification{
@@ -234,14 +204,6 @@
 }
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions{
-	NSError *setCategoryErr = nil;
-    NSError *activationErr  = nil;
-    [[AVAudioSession sharedInstance]
-     setCategory: AVAudioSessionCategoryPlayback
-     error: &setCategoryErr];
-    [[AVAudioSession sharedInstance]
-     setActive: YES
-     error: &activationErr];
 	return %orig;
 }
 
