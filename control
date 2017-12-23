@@ -3,7 +3,7 @@ Name: WeChatRedEnvelopesHelper
 Depends: mobilesubstrate
 Version: 0.0.1
 Architecture: iphoneos-arm
-Description: An awesome MobileSubstrate tweak!
+Description: 微信自动抢红包助手
 Maintainer: kevll
 Author: kevll
 Section: Tweaks

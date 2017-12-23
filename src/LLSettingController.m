@@ -84,9 +84,15 @@ static NSString * const kSettingControllerKey = @"SettingControllerKey";
     [stepCountSection setHeaderView:[[UIView alloc] initWithFrame:CGRectMake(0,0,0,20)]];
     [stepCountSection addCell:openStepCountCell];
     [stepCountSection addCell:stepCell];
+
+    MMTableViewCellInfo *githubCell = [NSClassFromString(@"MMTableViewCellInfo") normalCellForSel:@selector(onGithubCellClicked) target:self title:@"我的Github" rightValue:@"欢迎Star" accessoryType:1];
+
+    MMTableViewSectionInfo *aboutMeSection = [NSClassFromString(@"MMTableViewSectionInfo") sectionInfoDefaut];
+    [aboutMeSection addCell:githubCell];
     
     [tableInfo addSection:redEnvelopesSection];
     [tableInfo addSection:stepCountSection];
+    [tableInfo addSection:aboutMeSection];
     
     [[tableInfo getTableView] reloadData];
 }
@@ -127,6 +133,12 @@ static NSString * const kSettingControllerKey = @"SettingControllerKey";
 
 - (void)openStepCountSwitchHandler:(UISwitch *)openSwitch{
     _settingParam.isOpenSportHelper = openSwitch.on;
+}
+
+- (void)onGithubCellClicked{
+    NSURL *myGithubURL = [NSURL URLWithString:@"https://github.com/kevll/WeChatRedEnvelopesHelper"];
+    MMWebViewController *githubWebVC = [[NSClassFromString(@"MMWebViewController") alloc] initWithURL:myGithubURL presentModal:NO extraInfo:nil delegate:nil];
+    [self.navigationController PushViewController:githubWebVC animated:YES];
 }
 
 - (void)scrollViewWillBeginDragging:(UIScrollView *)scrollView{
