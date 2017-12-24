@@ -143,16 +143,16 @@ static NSString * const wantSportStepCountKey = @"wantSportStepCountKey";
     NSIndexPath *indexPath = [NSIndexPath indexPathForRow:0 inSection:section];
     UITableViewCell *cell = [baseMsgVC tableView:tableView cellForRowAtIndexPath:indexPath];
     
-    BOOL isFindWCPayC2CView = NO;
+    UIView *payC2CView = nil;
     for (UIView *subView in [cell.contentView subviews]) {
         if ([subView isKindOfClass:NSClassFromString(@"WCPayC2CMessageCellView")]) {
-            isFindWCPayC2CView = YES;
-            [baseMsgVC tapAppNodeView:subView];
+            payC2CView = subView;
             break;
         }
     }
-    if(!isFindWCPayC2CView){
-        [self reset];
+    if(payC2CView){
+        self.isHiddenRedEnvelopesReceiveView = YES;
+        [baseMsgVC tapAppNodeView:payC2CView];
     }
 }
 

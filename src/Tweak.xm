@@ -19,7 +19,6 @@
 - (void)PushViewController:(UIViewController *)controller animated:(BOOL)animated{
 	if ([LLRedEnvelopesMgr shared].isOpenRedEnvelopesHelper && [LLRedEnvelopesMgr shared].isHongBaoPush && [controller isMemberOfClass:NSClassFromString(@"BaseMsgContentViewController")]) {
 		[LLRedEnvelopesMgr shared].isHongBaoPush = NO;
-		[LLRedEnvelopesMgr shared].isHiddenRedEnvelopesReceiveView = YES;
         [[LLRedEnvelopesMgr shared] handleRedEnvelopesPushVC:(BaseMsgContentViewController *)controller]; 
     } else {
     	%orig;
@@ -32,6 +31,7 @@
 
 - (void)presentViewController:(UIViewController *)viewControllerToPresent animated:(BOOL)flag completion:(void (^)(void))completion{
 	if ([LLRedEnvelopesMgr shared].isOpenRedEnvelopesHelper && [LLRedEnvelopesMgr shared].isHiddenRedEnvelopesReceiveView && [viewControllerToPresent isKindOfClass:NSClassFromString(@"MMUINavigationController")]){
+		[LLRedEnvelopesMgr shared].isHiddenRedEnvelopesReceiveView = NO;
 		UINavigationController *navController = (UINavigationController *)viewControllerToPresent;
 		if (navController.viewControllers.count > 0){
 			if ([navController.viewControllers[0] isKindOfClass:NSClassFromString(@"WCRedEnvelopesRedEnvelopesDetailViewController")]){
@@ -56,10 +56,6 @@
 	        [LLRedEnvelopesMgr shared].haveNewRedEnvelopes = YES;
 	    }
 	}
-}
-
-- (void)AsyncOnPreAddMsg:(id)ext MsgWrap:(id)msg{
-	%orig;
 }
 
 - (void)onNewSyncShowPush:(NSDictionary *)message{
@@ -127,7 +123,6 @@
 
 - (void)viewDidLoad{
 	%orig;
-	//__weak typeof(self) weakself = self;
 	[LLRedEnvelopesMgr shared].openRedEnvelopesBlock = ^{
 		if([LLRedEnvelopesMgr shared].isOpenRedEnvelopesHelper && [LLRedEnvelopesMgr shared].haveNewRedEnvelopes){
 			[LLRedEnvelopesMgr shared].haveNewRedEnvelopes = NO;
@@ -182,29 +177,13 @@
 %hook MicroMessengerAppDelegate
 
 - (void)applicationWillEnterForeground:(UIApplication *)application {
+	%orig;
 	[[LLRedEnvelopesMgr shared] reset];
 }
 
--(void)applicationDidEnterBackground:(UIApplication *)application{
+- (void)applicationDidEnterBackground:(UIApplication *)application{
   %orig;
   [[LLRedEnvelopesMgr shared] enterBackgroundHandler];
-}
-
-- (void)application:(id)application didReceiveRemoteNotification:(id)notification fetchCompletionHandler:(id)handler{
-	%orig;
-}
-
-- (void)application:(id)application didReceiveRemoteNotification:(id)notification{
-	%orig;
-}
-
-%new
-- (void)userNotificationCenter:(id)center willPresentNotification:(id)notification withCompletionHandler:(id)completionHandler{
-
-}
-
-- (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions{
-	return %orig;
 }
 
 %end
